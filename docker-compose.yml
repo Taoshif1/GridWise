@@ -1,0 +1,12 @@
+services:
+  gridwise:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gridwise-bup:latest
+    container_name: gridwise-bup
+    env_file:
+      - .env
+    ports:
+      - "1337:1337"
+    restart: unless-stopped

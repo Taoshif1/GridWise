@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GridWise Energy Optimizer</title>
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <div class="logo">GW</div>
+        <div><h1>GridWise</h1><p>Smart Campus Energy Optimizer</p></div>
+      </div>
+      <div class="status-row">
+        <span class="chip" id="modelChip">Gemini 3.5 Flash-Lite</span>
+        <span class="chip" id="apiChip">Checking API…</span>
+        <a class="chip" href="/docs" target="_blank" rel="noopener">API Docs</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-card">
+          <div class="eyebrow">LLM-assisted scheduling</div>
+          <h2>Turn operator notes into a valid 24-hour energy plan.</h2>
+          <p>Enter demand, solar, tariffs and battery limits. GridWise uses Gemini to interpret operator instructions, validates the directives, then solves the lowest-cost feasible schedule.</p>
+        </div>
+        <div class="hero-card flow">
+          <div class="flow-step"><span>1</span> Human operator notes</div>
+          <div class="flow-step"><span>2</span> Gemini structured interpretation</div>
+          <div class="flow-step"><span>3</span> Deterministic guardrails</div>
+          <div class="flow-step"><span>4</span> Mathematical optimization</div>
+          <div class="flow-step"><span>5</span> Final rule replay</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace">
+      <div class="card input-card">
+        <h3>Scenario input</h3>
+        <p class="sub">Use the sample to start quickly, or edit every value yourself. The judging API remains available at <code>/optimize-energy</code>.</p>
+
+        <div class="actions">
+          <button class="btn btn-secondary" id="loadSampleBtn">Load official-style sample</button>
+          <label class="btn btn-secondary" for="jsonFile">Import JSON</label>
+          <input id="jsonFile" type="file" accept="application/json,.json" class="hidden" />
+          <button class="btn btn-secondary" id="exportInputBtn">Export input</button>
+        </div>
+
+        <div class="section">
+          <div class="grid-2">
+            <div class="field"><label>Scenario ID</label><input id="scenarioId" value="GRID-DEMO-001" /></div>
+            <div class="field"><label>Notes used</label><input id="noteCount" value="3" readonly /></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><h4>Operator notes</h4><span class="sub" style="margin:0">1–3 notes</span></div>
+          <div class="note-list">
+            <div class="field"><label>Note 1</label><textarea id="note1" placeholder="Example: Solar output will drop to 20% from 1 PM to 3 PM."></textarea></div>
+            <div class="field"><label>Note 2 (optional)</label><textarea id="note2"></textarea></div>
+            <div class="field"><label>Note 3 (optional)</label><textarea id="note3"></textarea></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><h4>Battery</h4></div>
+          <div class="grid-3">
+            <div class="field"><label>Capacity (kWh)</label><input id="capacity" type="number" min="0" step="0.01" /></div>
+            <div class="field"><label>Initial energy (kWh)</label><input id="initialEnergy" type="number" min="0" step="0.01" /></div>
+            <div class="field"><label>Minimum energy (kWh)</label><input id="minimumEnergy" type="number" min="0" step="0.01" /></div>
+            <div class="field"><label>Max charge / hour</label><input id="maxCharge" type="number" min="0" step="0.01" /></div>
+            <div class="field"><label>Max discharge / hour</label><input id="maxDischarge" type="number" min="0" step="0.01" /></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><h4>24-hour energy data</h4><span class="sub" style="margin:0">kWh / BDT per kWh</span></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Hour</th><th>Demand</th><th>Solar</th><th>Tariff</th></tr></thead>
+              <tbody id="hoursBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="errorBox" class="error hidden"></div>
+        <button class="btn btn-primary btn-lg" id="optimizeBtn">Optimize energy plan</button>
+      </div>
+
+      <div class="card results-card">
+        <div id="placeholder" class="results-placeholder">
+          <div><div class="icon">↗</div><h3>Results appear here</h3><p>Load the sample, review the operator notes, then optimize the scenario.</p></div>
+        </div>
+
+        <div id="results" class="hidden">
+          <div class="section-title"><div><h3>Optimization result</h3><p class="sub" id="resultScenario" style="margin:4px 0 0"></p></div><button class="btn btn-secondary" id="downloadResultBtn">Download JSON</button></div>
+          <div class="kpis">
+            <div class="kpi"><div class="label">Total cost</div><div class="value" id="totalCost">—</div></div>
+            <div class="kpi"><div class="label">Total grid</div><div class="value" id="totalGrid">—</div></div>
+            <div class="kpi"><div class="label">Peak grid</div><div class="value" id="peakGrid">—</div></div>
+          </div>
+          <div class="summary-box" id="summaryBox"></div>
+
+          <div class="section">
+            <div class="section-title"><h4>Interpreted directives</h4></div>
+            <div class="directive-list" id="directiveList"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title"><h4>24-hour plan chart</h4><span class="sub" style="margin:0">Grid / Solar / Battery energy</span></div>
+            <div class="chart-box"><canvas id="planChart"></canvas></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title"><h4>Hourly schedule</h4></div>
+            <div class="table-wrap" style="max-height:440px">
+              <table class="data-table schedule-table">
+                <thead><tr><th>Hour</th><th>Grid</th><th>Solar</th><th>Action</th><th>Battery kWh</th><th>Battery after</th></tr></thead>
+                <tbody id="scheduleBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <details><summary>Raw API JSON</summary><pre id="rawJson"></pre></details>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="container footer">GridWise • FastAPI • Gemini 3.5 Flash-Lite • deterministic validation • linear optimization</footer>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
