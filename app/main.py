@@ -27,6 +27,7 @@ TIMEOUT = float(os.getenv("SIMULATOR_TIMEOUT_SECONDS", "3"))
 MAX_RETRIES = int(os.getenv("SIMULATOR_MAX_RETRIES", "3"))
 CACHE_TTL = float(os.getenv("CACHE_TTL_SECONDS", "1"))
 FORECAST_LIMIT = int(os.getenv("FORECAST_HISTORY_LIMIT", "768"))
+EMBEDDED_SIMULATOR = os.getenv("EMBEDDED_SIMULATOR", "false").lower() in {"1", "true", "yes", "on"}
 FUELS = ("DIESEL", "PETROL", "OCTANE")
 
 
@@ -91,8 +92,350 @@ class SimulatorError(RuntimeError):
         self.payload = payload
 
 
+
+class DemoSimulator:
+    """Deterministic API-compatible demo world for hosted judging previews.
+
+    The production/local Compose path still uses the official organizer image.
+    This fallback exists because some PaaS hosts cannot run a second Docker image.
+    """
+
+    def __init__(self) -> None:
+        self.reset()
+
+    def reset(self) -> None:
+        self.tick = 0
+        self.status = "PAUSED"
+        self.started = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        self.regions = [
+            {"id": "region-dhaka", "name": "Dhaka Division", "demand_factor": 1.00},
+            {"id": "region-chattogram", "name": "Chattogram Division", "demand_factor": 1.08},
+        ]
+        self.depots = [
+            {"id": "depot-gazipur", "name": "Gazipur Depot", "region_id": "region-dhaka", "status": "OPEN", "dispatch_capacity_per_tick": 12000, "capacity": {"DIESEL": 90000, "PETROL": 70000, "OCTANE": 45000}, "inventory": {"DIESEL": 60000, "PETROL": 45000, "OCTANE": 26000}},
+            {"id": "depot-patiya", "name": "Patiya Depot", "region_id": "region-chattogram", "status": "OPEN", "dispatch_capacity_per_tick": 11000, "capacity": {"DIESEL": 85000, "PETROL": 65000, "OCTANE": 40000}, "inventory": {"DIESEL": 55000, "PETROL": 42000, "OCTANE": 24000}},
+        ]
+        self.stations = [
+            {"id": "station-mirpur", "name": "Mirpur Fuel Station", "region_id": "region-dhaka", "status": "OPEN", "demand_profile": "urban_high", "demand_multiplier": 1.0, "capacity": {"DIESEL": 15000, "PETROL": 14000, "OCTANE": 9000}, "inventory": {"DIESEL": 9000, "PETROL": 9000, "OCTANE": 5000}},
+            {"id": "station-tongi", "name": "Tongi Fuel Station", "region_id": "region-dhaka", "status": "OPEN", "demand_profile": "urban_medium", "demand_multiplier": 1.0, "capacity": {"DIESEL": 14000, "PETROL": 12000, "OCTANE": 8000}, "inventory": {"DIESEL": 8500, "PETROL": 7600, "OCTANE": 4400}},
+            {"id": "station-karnaphuli", "name": "Karnaphuli Fuel Station", "region_id": "region-chattogram", "status": "OPEN", "demand_profile": "industrial", "demand_multiplier": 1.0, "capacity": {"DIESEL": 16000, "PETROL": 13000, "OCTANE": 8500}, "inventory": {"DIESEL": 10000, "PETROL": 7600, "OCTANE": 4600}},
+            {"id": "station-coxsbazar", "name": "Cox's Bazar Fuel Station", "region_id": "region-chattogram", "status": "OPEN", "demand_profile": "tourism", "demand_multiplier": 1.0, "capacity": {"DIESEL": 12000, "PETROL": 11000, "OCTANE": 7500}, "inventory": {"DIESEL": 7000, "PETROL": 6500, "OCTANE": 3900}},
+        ]
+        self.routes = [
+            {"id": "route-gazipur-mirpur", "source_depot_id": "depot-gazipur", "destination_station_id": "station-mirpur", "transit_ticks": 2, "max_shipment": 7000, "status": "AVAILABLE"},
+            {"id": "route-gazipur-tongi", "source_depot_id": "depot-gazipur", "destination_station_id": "station-tongi", "transit_ticks": 2, "max_shipment": 6500, "status": "AVAILABLE"},
+            {"id": "route-patiya-karnaphuli", "source_depot_id": "depot-patiya", "destination_station_id": "station-karnaphuli", "transit_ticks": 2, "max_shipment": 7000, "status": "AVAILABLE"},
+            {"id": "route-patiya-coxsbazar", "source_depot_id": "depot-patiya", "destination_station_id": "station-coxsbazar", "transit_ticks": 3, "max_shipment": 6000, "status": "AVAILABLE"},
+            {"id": "route-gazipur-karnaphuli", "source_depot_id": "depot-gazipur", "destination_station_id": "station-karnaphuli", "transit_ticks": 4, "max_shipment": 5000, "status": "AVAILABLE"},
+            {"id": "route-patiya-mirpur", "source_depot_id": "depot-patiya", "destination_station_id": "station-mirpur", "transit_ticks": 4, "max_shipment": 5000, "status": "AVAILABLE"},
+        ]
+        self.supply_arrivals = [
+            {"id": "supply-001", "depot_id": "depot-gazipur", "fuel_type": "DIESEL", "quantity": 18000, "planned_tick": 12, "actual_tick": None, "status": "SCHEDULED"},
+            {"id": "supply-002", "depot_id": "depot-patiya", "fuel_type": "DIESEL", "quantity": 16000, "planned_tick": 14, "actual_tick": None, "status": "SCHEDULED"},
+            {"id": "supply-003", "depot_id": "depot-gazipur", "fuel_type": "PETROL", "quantity": 14000, "planned_tick": 20, "actual_tick": None, "status": "SCHEDULED"},
+            {"id": "supply-004", "depot_id": "depot-patiya", "fuel_type": "OCTANE", "quantity": 9000, "planned_tick": 24, "actual_tick": None, "status": "SCHEDULED"},
+        ]
+        self.events: list[dict[str, Any]] = []
+        self.allocations: list[dict[str, Any]] = []
+        self.faults: list[dict[str, Any]] = []
+        self.audit: list[dict[str, Any]] = []
+        self.demand_history: list[dict[str, Any]] = []
+        self.served = 0.0
+        self.unmet = 0.0
+        self.allocation_failures = 0
+        self._request_counter = 0
+        self._event_seq = 1
+        self._allocation_seq = 1
+        self._demand_seq = 1
+        self._bases = {
+            "station-mirpur": {"DIESEL": 420.0, "PETROL": 390.0, "OCTANE": 260.0},
+            "station-tongi": {"DIESEL": 300.0, "PETROL": 280.0, "OCTANE": 180.0},
+            "station-karnaphuli": {"DIESEL": 350.0, "PETROL": 320.0, "OCTANE": 220.0},
+            "station-coxsbazar": {"DIESEL": 250.0, "PETROL": 230.0, "OCTANE": 160.0},
+        }
+        for t in range(-48, 0):
+            for station in self.stations:
+                for fuel in FUELS:
+                    wave = 1 + 0.08 * math.sin((t + len(fuel)) / 5)
+                    demand = self._bases[station["id"]][fuel] * wave
+                    self.demand_history.append(self._demand_row(station["id"], fuel, t, demand, demand))
+
+    def _clone(self, value: Any) -> Any:
+        return json.loads(json.dumps(value))
+
+    def _now_sim(self) -> str:
+        from datetime import timedelta
+        return (self.started + timedelta(minutes=15 * self.tick)).isoformat()
+
+    def _demand_row(self, station_id: str, fuel: str, tick: int, demand: float, served: float) -> dict[str, Any]:
+        row = {"id": self._demand_seq, "station_id": station_id, "fuel_type": fuel, "tick": tick, "sim_time": self._now_sim(), "demand_liters": round(demand, 3), "served_liters": round(served, 3), "unmet_liters": round(max(0.0, demand - served), 3)}
+        self._demand_seq += 1
+        return row
+
+    def _active_fault(self, kind: str) -> dict[str, Any] | None:
+        now = time.monotonic()
+        for fault in self.faults:
+            if fault["type"] == kind and fault["end"] > now:
+                return fault
+        return None
+
+    async def _fault_gate(self, path: str) -> bool:
+        if not path.startswith("/v1/") or path == "/v1/health":
+            return False
+        self._request_counter += 1
+        latency = self._active_fault("latency")
+        if latency:
+            await asyncio.sleep(float(latency["parameters"].get("delay_ms", 500)) / 1000)
+        if self._active_fault("unavailable"):
+            raise SimulatorError("Injected simulator unavailable fault", 503, {"error": {"code": "FAULT_INJECTED"}})
+        rate = self._active_fault("error_rate")
+        if rate:
+            threshold = max(1, int(round(1 / max(float(rate["parameters"].get("rate", 0.25)), 0.01))))
+            if self._request_counter % threshold == 0:
+                raise SimulatorError("Injected transient simulator error", 503, {"error": {"code": "FAULT_INJECTED"}})
+        return self._active_fault("stale_data") is not None
+
+    def _find(self, rows: list[dict[str, Any]], entity_id: str) -> dict[str, Any] | None:
+        return next((row for row in rows if row.get("id") == entity_id), None)
+
+    def _record(self, action: str, entity_type: str = "system", entity_id: str = "") -> None:
+        self.audit.insert(0, {"id": len(self.audit) + 1, "wall_time": utc_now(), "sim_time": self._now_sim(), "tick": self.tick, "action": action, "entity_type": entity_type, "entity_id": entity_id, "result": "OK", "metadata_json": {}})
+
+    def _start_event(self, event: dict[str, Any]) -> None:
+        p = event["parameters"]
+        if event["type"] == "demand_spike":
+            ids = set(p.get("station_ids") or [])
+            regions = set(p.get("region_ids") or [])
+            mult = float(p.get("multiplier", 1.5))
+            for station in self.stations:
+                if (not ids and not regions) or station["id"] in ids or station["region_id"] in regions:
+                    station["demand_multiplier"] *= mult
+        elif event["type"] == "route_disruption":
+            ids = set(p.get("route_ids") or [])
+            for route in self.routes:
+                if not ids or route["id"] in ids:
+                    route["status"] = "DISRUPTED"
+        elif event["type"] == "station_outage":
+            ids = set(p.get("station_ids") or [])
+            for station in self.stations:
+                if not ids or station["id"] in ids:
+                    station["status"] = "OUTAGE"
+        elif event["type"] == "depot_constraint":
+            ids = set(p.get("depot_ids") or [])
+            for depot in self.depots:
+                if not ids or depot["id"] in ids:
+                    depot["status"] = "CONSTRAINED"
+        elif event["type"] == "shipment_delay":
+            ids = set(p.get("depot_ids") or [])
+            fuels = set(p.get("fuel_types") or [])
+            delay = int(p.get("delay_ticks", 2))
+            for supply in self.supply_arrivals:
+                if supply["status"] == "SCHEDULED" and (not ids or supply["depot_id"] in ids) and (not fuels or supply["fuel_type"] in fuels):
+                    supply["planned_tick"] += delay
+                    supply["status"] = "DELAYED"
+        elif event["type"] == "supply_shortfall":
+            ids = set(p.get("depot_ids") or [])
+            fuels = set(p.get("fuel_types") or [])
+            factor = float(p.get("factor", 0.5))
+            for supply in self.supply_arrivals:
+                if supply["status"] in {"SCHEDULED", "DELAYED"} and (not ids or supply["depot_id"] in ids) and (not fuels or supply["fuel_type"] in fuels):
+                    supply["quantity"] = round(float(supply["quantity"]) * factor, 3)
+        event["status"] = "ACTIVE"
+        self._record("event.started", "event", str(event["id"]))
+
+    def _resolve_event(self, event: dict[str, Any]) -> None:
+        p = event["parameters"]
+        if event["type"] == "demand_spike":
+            ids = set(p.get("station_ids") or [])
+            regions = set(p.get("region_ids") or [])
+            mult = max(float(p.get("multiplier", 1.5)), 0.01)
+            for station in self.stations:
+                if (not ids and not regions) or station["id"] in ids or station["region_id"] in regions:
+                    station["demand_multiplier"] /= mult
+        elif event["type"] == "route_disruption":
+            ids = set(p.get("route_ids") or [])
+            for route in self.routes:
+                if not ids or route["id"] in ids:
+                    route["status"] = "AVAILABLE"
+        elif event["type"] == "station_outage":
+            ids = set(p.get("station_ids") or [])
+            for station in self.stations:
+                if not ids or station["id"] in ids:
+                    station["status"] = "OPEN"
+        elif event["type"] == "depot_constraint":
+            ids = set(p.get("depot_ids") or [])
+            for depot in self.depots:
+                if not ids or depot["id"] in ids:
+                    depot["status"] = "OPEN"
+        event["status"] = "RESOLVED"
+        self._record("event.resolved", "event", str(event["id"]))
+
+    def step(self) -> None:
+        self.tick += 1
+        for event in self.events:
+            if event["status"] == "SCHEDULED" and event["start_tick"] <= self.tick:
+                self._start_event(event)
+            if event["status"] == "ACTIVE" and event["end_tick"] <= self.tick:
+                self._resolve_event(event)
+
+        for supply in self.supply_arrivals:
+            if supply["status"] in {"SCHEDULED", "DELAYED"} and supply["planned_tick"] <= self.tick:
+                depot = self._find(self.depots, supply["depot_id"])
+                if depot:
+                    fuel = supply["fuel_type"]
+                    depot["inventory"][fuel] = min(depot["capacity"][fuel], depot["inventory"][fuel] + float(supply["quantity"]))
+                supply["actual_tick"] = self.tick
+                supply["status"] = "ARRIVED"
+                self._record("supply.arrived", "supply", supply["id"])
+
+        for allocation in self.allocations:
+            if allocation["status"] == "PENDING" and allocation["created_tick"] < self.tick:
+                route = self._find(self.routes, allocation["route_id"])
+                depot = self._find(self.depots, allocation["source_depot_id"])
+                if not route or route["status"] != "AVAILABLE":
+                    allocation["status"] = "FAILED"
+                    allocation["failure_reason"] = "ROUTE_DISRUPTED"
+                    self.allocation_failures += 1
+                    self._record("allocation.failed", "allocation", str(allocation["id"]))
+                elif depot and depot["inventory"][allocation["fuel_type"]] >= allocation["quantity"]:
+                    depot["inventory"][allocation["fuel_type"]] -= allocation["quantity"]
+                    allocation["departure_tick"] = self.tick
+                    allocation["expected_arrival_tick"] = self.tick + int(route["transit_ticks"])
+                    allocation["status"] = "IN_TRANSIT"
+                    self._record("allocation.departed", "allocation", str(allocation["id"]))
+
+            if allocation["status"] == "IN_TRANSIT" and allocation["expected_arrival_tick"] <= self.tick:
+                station = self._find(self.stations, allocation["destination_station_id"])
+                if station:
+                    fuel = allocation["fuel_type"]
+                    station["inventory"][fuel] = min(station["capacity"][fuel], station["inventory"][fuel] + allocation["quantity"])
+                allocation["actual_arrival_tick"] = self.tick
+                allocation["status"] = "ARRIVED"
+                self._record("allocation.arrived", "allocation", str(allocation["id"]))
+
+        for station in self.stations:
+            for fuel in FUELS:
+                wave = 1 + 0.06 * math.sin((self.tick + len(station["id"]) + len(fuel)) / 4)
+                demand = self._bases[station["id"]][fuel] * station["demand_multiplier"] * wave
+                served = 0.0 if station["status"] != "OPEN" else min(float(station["inventory"][fuel]), demand)
+                if station["status"] == "OPEN":
+                    station["inventory"][fuel] = max(0.0, float(station["inventory"][fuel]) - served)
+                self.served += served
+                self.unmet += max(0.0, demand - served)
+                self.demand_history.append(self._demand_row(station["id"], fuel, self.tick, demand, served))
+        self._record("simulation.tick")
+
+    async def get(self, path: str) -> tuple[Any, dict[str, Any]]:
+        stale = await self._fault_gate(path)
+        base = path.split("?", 1)[0]
+        if base == "/v1/health":
+            data = {"status": "ok", "database": "ok", "simulation": {"status": self.status, "tick": self.tick}}
+        elif base == "/v1/instance":
+            data = {"id": 1, "scenario_id": "baseline", "scenario_version": "1.0", "seed": 12345, "sim_time": self._now_sim(), "tick": self.tick, "tick_minutes": 15, "status": self.status}
+        elif base == "/v1/regions":
+            data = self.regions
+        elif base == "/v1/depots":
+            data = self.depots
+        elif base == "/v1/stations":
+            data = self.stations
+        elif base == "/v1/routes":
+            data = self.routes
+        elif base == "/v1/supply-arrivals":
+            data = sorted(self.supply_arrivals, key=lambda x: x["planned_tick"])
+        elif base == "/v1/events":
+            data = sorted(self.events, key=lambda x: x["id"], reverse=True)
+        elif base == "/v1/allocations":
+            data = sorted(self.allocations, key=lambda x: x["id"], reverse=True)
+        elif base == "/v1/demand-history":
+            limit = 200
+            if "limit=" in path:
+                try:
+                    limit = max(1, min(2000, int(path.split("limit=", 1)[1].split("&", 1)[0])))
+                except Exception:
+                    pass
+            data = self.demand_history[-limit:]
+        elif base == "/v1/metrics":
+            total = self.served + self.unmet
+            data = {"served_demand_liters": round(self.served, 3), "unmet_demand_liters": round(self.unmet, 3), "service_level": round(self.served / total, 6) if total else 1.0, "allocation_liters": round(sum(float(a["quantity"]) for a in self.allocations if a["status"] in {"IN_TRANSIT", "ARRIVED"}), 3), "allocation_failures": self.allocation_failures}
+        elif base == "/admin/audit":
+            data = self.audit
+        else:
+            raise SimulatorError("Demo endpoint not found", 404, {"detail": {"code": "NOT_FOUND"}})
+        return self._clone(data), {"cached": False, "degraded": False, "stale": stale}
+
+    async def post(self, path: str, body: dict[str, Any]) -> Any:
+        if path == "/admin/run":
+            self.status = "RUNNING"; self._record("admin.run"); return {"status": self.status}
+        if path == "/admin/pause":
+            self.status = "PAUSED"; self._record("admin.pause"); return {"status": self.status}
+        if path == "/admin/step":
+            self.step(); return {"tick": self.tick, "sim_time": self._now_sim()}
+        if path == "/admin/reset":
+            self.reset(); return {"status": "reset"}
+        if path == "/admin/faults/clear":
+            self.faults.clear(); self._record("fault.clear_all"); return {"status": "cleared"}
+        if path == "/admin/faults":
+            fault = {"id": len(self.faults) + 1, "type": body["type"], "parameters": body.get("parameters") or {}, "end": time.monotonic() + int(body["duration_seconds"])}
+            self.faults.append(fault); self._record("fault.created", "fault", str(fault["id"])); return self._clone(fault)
+        if path == "/admin/events":
+            event = {"id": self._event_seq, "type": body["type"], "start_tick": int(body["start_tick"]), "end_tick": int(body["start_tick"]) + int(body["duration_ticks"]), "status": "SCHEDULED", "parameters": body.get("parameters") or {}}
+            self._event_seq += 1; self.events.append(event); self._record("event.created", "event", str(event["id"])); return self._clone(event)
+        if path.startswith("/v1/allocations/") and path.endswith("/cancel"):
+            try:
+                allocation_id = int(path.split("/")[3])
+            except Exception:
+                raise SimulatorError("Allocation not found", 404)
+            allocation = next((a for a in self.allocations if a["id"] == allocation_id), None)
+            if not allocation:
+                raise SimulatorError("Allocation not found", 404)
+            if allocation["status"] != "PENDING":
+                raise SimulatorError("Only pending allocations can be cancelled", 409)
+            allocation["status"] = "CANCELLED"; self._record("allocation.cancelled", "allocation", str(allocation_id)); return self._clone(allocation)
+        if path == "/v1/allocations":
+            route = self._find(self.routes, body["route_id"])
+            depot = self._find(self.depots, body["source_depot_id"])
+            station = self._find(self.stations, body["destination_station_id"])
+            fuel = body["fuel_type"]; quantity = float(body["quantity"])
+            if not route or not depot or not station:
+                raise SimulatorError("Unknown depot, station, or route", 404, {"detail": {"code": "NOT_FOUND"}})
+            if route["source_depot_id"] != depot["id"] or route["destination_station_id"] != station["id"]:
+                raise SimulatorError("Route mismatch", 409, {"detail": {"code": "ROUTE_MISMATCH"}})
+            if route["status"] != "AVAILABLE":
+                raise SimulatorError("Route disrupted", 409, {"detail": {"code": "ROUTE_DISRUPTED"}})
+            if station["status"] != "OPEN":
+                raise SimulatorError("Station closed", 409, {"detail": {"code": "STATION_CLOSED"}})
+            if quantity > float(route["max_shipment"]):
+                raise SimulatorError("Route capacity exceeded", 409, {"detail": {"code": "ROUTE_CAPACITY_EXCEEDED"}})
+            if depot["inventory"][fuel] < quantity:
+                raise SimulatorError("Insufficient depot inventory", 409, {"detail": {"code": "INSUFFICIENT_INVENTORY"}})
+            inbound = sum(float(a["quantity"]) for a in self.allocations if a["destination_station_id"] == station["id"] and a["fuel_type"] == fuel and a["status"] in {"PENDING", "IN_TRANSIT"})
+            if station["inventory"][fuel] + inbound + quantity > station["capacity"][fuel]:
+                raise SimulatorError("Destination capacity exceeded", 409, {"detail": {"code": "DESTINATION_CAPACITY_EXCEEDED"}})
+            key = body["idempotency_key"]
+            existing = next((a for a in self.allocations if a["idempotency_key"] == key), None)
+            if existing:
+                comparable = {k: existing[k] for k in ("source_depot_id", "destination_station_id", "route_id", "fuel_type", "quantity")}
+                requested = {k: body[k] for k in comparable}
+                if comparable == requested:
+                    return self._clone(existing)
+                raise SimulatorError("Idempotency key mismatch", 409, {"detail": {"code": "IDEMPOTENCY_KEY_MISMATCH"}})
+            allocation = {"id": self._allocation_seq, "idempotency_key": key, "source_depot_id": depot["id"], "destination_station_id": station["id"], "route_id": route["id"], "fuel_type": fuel, "quantity": quantity, "created_tick": self.tick, "departure_tick": None, "expected_arrival_tick": None, "actual_arrival_tick": None, "status": "PENDING", "failure_reason": None}
+            self._allocation_seq += 1; self.allocations.append(allocation); self._record("allocation.created", "allocation", str(allocation["id"])); return self._clone(allocation)
+        raise SimulatorError("Demo endpoint not found", 404)
+
+    async def stream(self) -> AsyncIterator[tuple[str, dict[str, Any]]]:
+        while True:
+            if self._active_fault("stream_disconnect"):
+                raise SimulatorError("Injected SSE disconnect", 503)
+            await asyncio.sleep(0.75)
+            if self.status == "RUNNING":
+                self.step()
+            yield "simulation.tick", {"tick": self.tick, "sim_time": self._now_sim()}
+
+
 class SimulatorClient:
     def __init__(self) -> None:
+        self.demo = DemoSimulator() if EMBEDDED_SIMULATOR else None
         self.http = httpx.AsyncClient(timeout=TIMEOUT)
         self.cache: dict[str, tuple[Any, float, bool]] = {}
         self.failures = 0
@@ -119,6 +462,8 @@ class SimulatorClient:
         await self.http.aclose()
 
     async def get(self, path: str, cached_fallback: bool = True) -> tuple[Any, dict[str, Any]]:
+        if self.demo is not None:
+            return await self.demo.get(path)
         key = f"GET:{path}"
         now = time.monotonic()
         cached = self.cache.get(key)
@@ -181,6 +526,8 @@ class SimulatorClient:
         raise SimulatorError(f"Simulator request failed: {last}")
 
     async def post(self, path: str, body: dict[str, Any] | None = None) -> Any:
+        if self.demo is not None:
+            return await self.demo.post(path, body or {})
         last: Exception | None = None
         for attempt in range(MAX_RETRIES):
             start = time.perf_counter()
@@ -271,6 +618,10 @@ class SimulatorClient:
         return out
 
     async def stream(self) -> AsyncIterator[tuple[str, dict[str, Any]]]:
+        if self.demo is not None:
+            async for item in self.demo.stream():
+                yield item
+            return
         async with self.http.stream("GET", f"{SIMULATOR_URL}/v1/stream", timeout=None) as r:
             if r.status_code >= 400:
                 raw = await r.aread()
