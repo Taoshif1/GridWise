@@ -1079,7 +1079,26 @@ async def startup():
         "system",
         "GridWise FuelOps started",
         simulator_url=SIMULATOR_URL,
+        embedded_simulator=EMBEDDED_SIMULATOR,
     )
+    try:
+        startup_snapshot = await sim.snapshot()
+        startup_plan = optimize(startup_snapshot)
+        startup_recommendations = len(startup_plan.get("recommendations", []))
+        telemetry.event(
+            "selftest",
+            "Startup integration self-test passed",
+            recommendations=startup_recommendations,
+            degraded=startup_snapshot.get("meta", {}).get("degraded", False),
+        )
+        print(
+            "GRIDWISE_SELFTEST_OK "
+            f"tick={startup_snapshot.get('instance', {}).get('tick')} "
+            f"recommendations={startup_recommendations}"
+        )
+    except Exception as exc:
+        telemetry.event("selftest_failed", "Startup integration self-test failed", error=str(exc))
+        print(f"GRIDWISE_SELFTEST_FAILED error={exc}")
     watcher_task = asyncio.create_task(sse_watch())
 
 
