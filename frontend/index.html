@@ -1,137 +1,105 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GridWise Energy Optimizer</title>
-  <link rel="stylesheet" href="/assets/styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GridWise FuelOps | BUP Finals</title>
+<style>
+:root{--bg:#07111e;--card:#101d2c;--line:#21354a;--text:#eef7ff;--muted:#8da6bb;--green:#39d5a6;--blue:#56a8ff;--yellow:#ffc766;--red:#ff6f7a}*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial;background:radial-gradient(circle at 10% 0,#123047 0,transparent 24%),var(--bg);color:var(--text)}button{font:inherit}.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.side{border-right:1px solid var(--line);padding:24px 16px;background:#081421;position:sticky;top:0;height:100vh}.brand{display:flex;gap:10px;align-items:center;margin-bottom:28px}.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--green),var(--blue));display:grid;place-items:center;color:#04131a;font-weight:900}.brand b{display:block}.brand small{color:var(--muted)}nav button{width:100%;border:0;background:transparent;color:var(--muted);padding:11px 12px;text-align:left;border-radius:9px;cursor:pointer;margin-bottom:6px}nav button.active,nav button:hover{background:#12273a;color:#fff}.conn{margin-top:28px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--yellow)}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}main{padding:28px 34px 60px;min-width:0}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:20px}.eyebrow{font-size:10px;letter-spacing:1.4px;color:#6f8da7;font-weight:800;margin:0 0 6px}h1{font-size:28px;margin:0}.actions{display:flex;gap:8px;align-items:center}.badge,.btn{border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:11px}.badge{color:#aac1d3;background:#0c1927}.badge.bad{color:#ffd0d4;border-color:#653744}.btn{cursor:pointer;color:#ecfff9;background:linear-gradient(135deg,#174a40,#173452);font-weight:700}.btn.ghost{background:#0c1927;color:#b9cbd8}.btn.red{background:#3b1b25;border-color:#653744;color:#ffc4c9}.view{display:none}.view.active{display:block}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.metric,.panel{background:linear-gradient(180deg,#101f30,#0c1927);border:1px solid var(--line);box-shadow:0 16px 45px #0004}.metric{padding:16px;border-radius:14px}.metric span{font-size:11px;color:var(--muted)}.metric strong{display:block;font-size:26px;margin:7px 0}.metric small{font-size:9px;color:#67849a}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.panel{padding:17px;border-radius:14px;margin-bottom:14px;overflow:hidden}.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}.head h2{font-size:17px;margin:0}.stack{display:flex;flex-direction:column;gap:8px}.item{border:1px solid var(--line);background:#ffffff05;padding:11px;border-radius:10px;font-size:11px}.item strong{display:block;margin-bottom:5px}.item small{color:var(--muted);line-height:1.45}.risk{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.risk em{font-style:normal;font-weight:900;color:var(--red)}.rec{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.meta{color:#7da7c5;font-size:9px;margin-top:5px}.controls{display:flex;gap:8px;flex-wrap:wrap}.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.entity{border:1px solid var(--line);border-radius:10px;padding:12px;background:#ffffff05}.entity h3{font-size:12px;margin:0 0 4px}.sub{font-size:9px;color:var(--muted);margin-bottom:8px}.fuel{font-size:9px;margin:7px 0}.bar{height:6px;border-radius:999px;background:#07111e;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--blue))}.table{overflow:auto}table{width:100%;border-collapse:collapse;font-size:10px}th,td{padding:9px 7px;text-align:left;border-bottom:1px solid #1b3042;white-space:nowrap}th{color:#7895aa;font-size:8px;text-transform:uppercase;letter-spacing:.8px}.good{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}.scenario{display:grid;grid-template-columns:1fr 1fr;gap:9px}.scenario button{text-align:left;background:#ffffff05;border:1px solid var(--line);border-radius:10px;color:#fff;padding:12px;cursor:pointer}.scenario button b{display:block;font-size:11px;margin-bottom:5px}.scenario button span{font-size:9px;color:var(--muted)}pre{background:#06101a;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;color:#85cbb4;font-size:10px}.toast{position:fixed;right:20px;bottom:20px;background:#13263a;border:1px solid var(--line);border-radius:10px;padding:12px 14px;opacity:0;transform:translateY(10px);transition:.2s;max-width:360px;font-size:11px}.toast.show{opacity:1;transform:none}.toast.err{border-color:#653744;color:#ffc9ce}@media(max-width:950px){.app{grid-template-columns:1fr}.side{height:auto;position:relative;border-right:0;border-bottom:1px solid var(--line)}nav{display:flex;flex-wrap:wrap}.side nav button{width:auto}.conn{display:none}.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}@media(max-width:600px){main{padding:20px 14px}.top{align-items:flex-start;flex-direction:column}.metrics,.cards,.scenario{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="container topbar-inner">
-      <div class="brand">
-        <div class="logo">GW</div>
-        <div><h1>GridWise</h1><p>Smart Campus Energy Optimizer</p></div>
-      </div>
-      <div class="status-row">
-        <span class="chip" id="modelChip">Gemini 3.5 Flash-Lite</span>
-        <span class="chip" id="apiChip">Checking API…</span>
-        <a class="chip" href="/docs" target="_blank" rel="noopener">API Docs</a>
-      </div>
-    </div>
-  </header>
+<div class="app">
+<aside class="side">
+<div class="brand"><div class="logo">GW</div><div><b>GridWise</b><small>FuelOps Intelligence</small></div></div>
+<nav id="nav">
+<button class="active" data-v="overview">Overview</button>
+<button data-v="network">Network</button>
+<button data-v="decisions">Decisions</button>
+<button data-v="crisis">Crisis Lab</button>
+<button data-v="observability">Observability</button>
+</nav>
+<div class="conn"><span id="dot" class="dot"></span><span id="conn">Connecting to BUP Simulator</span></div>
+</aside>
+<main>
+<header class="top"><div><p class="eyebrow">BUP CSE FEST 2026 · HACKATHON FINALS</p><h1 id="title">Fuel Operations Command Center</h1></div><div class="actions"><span id="degraded" class="badge" style="display:none">DEGRADED</span><span id="tick" class="badge">Tick --</span><button class="btn ghost" id="refresh">Refresh</button></div></header>
 
-  <main class="container">
-    <section class="hero">
-      <div class="hero-grid">
-        <div class="hero-card">
-          <div class="eyebrow">LLM-assisted scheduling</div>
-          <h2>Turn operator notes into a valid 24-hour energy plan.</h2>
-          <p>Enter demand, solar, tariffs and battery limits. GridWise uses Gemini to interpret operator instructions, validates the directives, then solves the lowest-cost feasible schedule.</p>
-        </div>
-        <div class="hero-card flow">
-          <div class="flow-step"><span>1</span> Human operator notes</div>
-          <div class="flow-step"><span>2</span> Gemini structured interpretation</div>
-          <div class="flow-step"><span>3</span> Deterministic guardrails</div>
-          <div class="flow-step"><span>4</span> Mathematical optimization</div>
-          <div class="flow-step"><span>5</span> Final rule replay</div>
-        </div>
-      </div>
-    </section>
+<section id="overview" class="view active">
+<div class="metrics">
+<div class="metric"><span>Service Level</span><strong id="service">--</strong><small>served / total demand</small></div>
+<div class="metric"><span>Critical Risks</span><strong id="critical">--</strong><small>predicted stockouts</small></div>
+<div class="metric"><span>Active Crises</span><strong id="crises">--</strong><small>simulator events</small></div>
+<div class="metric"><span>Allocation Failures</span><strong id="failures">--</strong><small>simulator ground truth</small></div>
+</div>
+<div class="grid2">
+<div class="panel"><div class="head"><div><p class="eyebrow">REAL-TIME RISK</p><h2>Shortage Radar</h2></div></div><div id="risks" class="stack"></div></div>
+<div class="panel"><div class="head"><div><p class="eyebrow">DECISION ENGINE</p><h2>Recommended Allocations</h2></div><button id="applyAll" class="btn">Apply All</button></div><div id="recs" class="stack"></div></div>
+</div>
+<div class="panel"><div class="head"><div><p class="eyebrow">OPERATOR CONTROL</p><h2>Simulation Controls</h2></div><span id="simstate" class="badge">Unknown</span></div><div class="controls"><button class="btn" data-admin="run">Run</button><button class="btn ghost" data-admin="pause">Pause</button><button class="btn ghost" data-admin="step">Step 1 Tick</button><button class="btn red" data-admin="reset">Reset Scenario</button></div></div>
+</section>
 
-    <section class="workspace">
-      <div class="card input-card">
-        <h3>Scenario input</h3>
-        <p class="sub">Use the sample to start quickly, or edit every value yourself. The judging API remains available at <code>/optimize-energy</code>.</p>
+<section id="network" class="view">
+<div class="grid2"><div class="panel"><div class="head"><h2>Depots</h2></div><div id="depots" class="cards"></div></div><div class="panel"><div class="head"><h2>Stations</h2></div><div id="stations" class="cards"></div></div></div>
+<div class="panel"><div class="head"><h2>Routes</h2></div><div class="table"><table><thead><tr><th>Route</th><th>From</th><th>To</th><th>Transit</th><th>Max Shipment</th><th>Status</th></tr></thead><tbody id="routes"></tbody></table></div></div>
+<div class="panel"><div class="head"><h2>Incoming Supply</h2></div><div class="table"><table><thead><tr><th>ID</th><th>Depot</th><th>Fuel</th><th>Quantity</th><th>Planned Tick</th><th>Status</th></tr></thead><tbody id="supplies"></tbody></table></div></div>
+</section>
 
-        <div class="actions">
-          <button class="btn btn-secondary" id="loadSampleBtn">Load official-style sample</button>
-          <label class="btn btn-secondary" for="jsonFile">Import JSON</label>
-          <input id="jsonFile" type="file" accept="application/json,.json" class="hidden" />
-          <button class="btn btn-secondary" id="exportInputBtn">Export input</button>
-        </div>
+<section id="decisions" class="view">
+<div class="panel"><div class="head"><div><p class="eyebrow">EXPLAINABLE INTELLIGENCE</p><h2>Decision Queue</h2></div><button id="recompute" class="btn ghost">Recompute</button></div><div id="queue" class="stack"></div></div>
+<div class="panel"><div class="head"><div><p class="eyebrow">AUDITABILITY</p><h2>Allocation History</h2></div></div><div class="table"><table><thead><tr><th>ID</th><th>Fuel</th><th>Route</th><th>Qty</th><th>Created</th><th>ETA</th><th>Status</th></tr></thead><tbody id="allocs"></tbody></table></div></div>
+</section>
 
-        <div class="section">
-          <div class="grid-2">
-            <div class="field"><label>Scenario ID</label><input id="scenarioId" value="GRID-DEMO-001" /></div>
-            <div class="field"><label>Notes used</label><input id="noteCount" value="3" readonly /></div>
-          </div>
-        </div>
+<section id="crisis" class="view">
+<div class="grid2">
+<div class="panel"><div class="head"><div><p class="eyebrow">DOMAIN DISRUPTIONS</p><h2>Inject Crisis</h2></div></div><div class="scenario"><button data-crisis="demand_spike"><b>Demand Spike</b><span>Dhaka demand ×1.8 for 12 ticks</span></button><button data-crisis="route_disruption"><b>Route Disruption</b><span>Disrupt Gazipur → Mirpur</span></button><button data-crisis="station_outage"><b>Station Outage</b><span>Take Mirpur offline</span></button><button data-crisis="supply_shortfall"><b>Supply Shortfall</b><span>Cut diesel arrival by 50%</span></button></div></div>
+<div class="panel"><div class="head"><div><p class="eyebrow">ENGINEERING RESILIENCE</p><h2>Inject Fault</h2></div><button id="clearFaults" class="btn ghost">Clear</button></div><div class="scenario"><button data-fault="latency"><b>Latency</b><span>500 ms for 45 seconds</span></button><button data-fault="error_rate"><b>Error Rate</b><span>25% transient 503s</span></button><button data-fault="stale_data"><b>Stale Data</b><span>Mark REST state stale</span></button><button data-fault="stream_disconnect"><b>SSE Disconnect</b><span>Force stream recovery</span></button></div></div>
+</div>
+<div class="panel"><div class="head"><h2>Event Timeline</h2></div><div id="events" class="stack"></div></div>
+</section>
 
-        <div class="section">
-          <div class="section-title"><h4>Operator notes</h4><span class="sub" style="margin:0">1–3 notes</span></div>
-          <div class="note-list">
-            <div class="field"><label>Note 1</label><textarea id="note1" placeholder="Example: Solar output will drop to 20% from 1 PM to 3 PM."></textarea></div>
-            <div class="field"><label>Note 2 (optional)</label><textarea id="note2"></textarea></div>
-            <div class="field"><label>Note 3 (optional)</label><textarea id="note3"></textarea></div>
-          </div>
-        </div>
+<section id="observability" class="view">
+<div class="metrics"><div class="metric"><span>p95 Latency</span><strong id="p95">--</strong><small>recent calls</small></div><div class="metric"><span>Error Rate</span><strong id="error">--</strong><small>5xx fraction</small></div><div class="metric"><span>Degraded Reads</span><strong id="degradedReads">--</strong><small>cache continuity</small></div><div class="metric"><span>SSE Reconnects</span><strong id="sse">--</strong><small>stream recovery</small></div></div>
+<div class="grid2"><div class="panel"><div class="head"><h2>System Health</h2></div><div id="health" class="stack"></div></div><div class="panel"><div class="head"><h2>Operations Log</h2></div><div id="audit" class="stack"></div></div></div>
+<div class="panel"><div class="head"><h2>Prometheus Metrics</h2><a class="btn ghost" href="/metrics" target="_blank">Open /metrics</a></div><pre id="metrics">Loading...</pre></div>
+</section>
+</main>
+</div>
+<div id="toast" class="toast"></div>
 
-        <div class="section">
-          <div class="section-title"><h4>Battery</h4></div>
-          <div class="grid-3">
-            <div class="field"><label>Capacity (kWh)</label><input id="capacity" type="number" min="0" step="0.01" /></div>
-            <div class="field"><label>Initial energy (kWh)</label><input id="initialEnergy" type="number" min="0" step="0.01" /></div>
-            <div class="field"><label>Minimum energy (kWh)</label><input id="minimumEnergy" type="number" min="0" step="0.01" /></div>
-            <div class="field"><label>Max charge / hour</label><input id="maxCharge" type="number" min="0" step="0.01" /></div>
-            <div class="field"><label>Max discharge / hour</label><input id="maxDischarge" type="number" min="0" step="0.01" /></div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title"><h4>24-hour energy data</h4><span class="sub" style="margin:0">kWh / BDT per kWh</span></div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Hour</th><th>Demand</th><th>Solar</th><th>Tariff</th></tr></thead>
-              <tbody id="hoursBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div id="errorBox" class="error hidden"></div>
-        <button class="btn btn-primary btn-lg" id="optimizeBtn">Optimize energy plan</button>
-      </div>
-
-      <div class="card results-card">
-        <div id="placeholder" class="results-placeholder">
-          <div><div class="icon">↗</div><h3>Results appear here</h3><p>Load the sample, review the operator notes, then optimize the scenario.</p></div>
-        </div>
-
-        <div id="results" class="hidden">
-          <div class="section-title"><div><h3>Optimization result</h3><p class="sub" id="resultScenario" style="margin:4px 0 0"></p></div><button class="btn btn-secondary" id="downloadResultBtn">Download JSON</button></div>
-          <div class="kpis">
-            <div class="kpi"><div class="label">Total cost</div><div class="value" id="totalCost">—</div></div>
-            <div class="kpi"><div class="label">Total grid</div><div class="value" id="totalGrid">—</div></div>
-            <div class="kpi"><div class="label">Peak grid</div><div class="value" id="peakGrid">—</div></div>
-          </div>
-          <div class="summary-box" id="summaryBox"></div>
-
-          <div class="section">
-            <div class="section-title"><h4>Interpreted directives</h4></div>
-            <div class="directive-list" id="directiveList"></div>
-          </div>
-
-          <div class="section">
-            <div class="section-title"><h4>24-hour plan chart</h4><span class="sub" style="margin:0">Grid / Solar / Battery energy</span></div>
-            <div class="chart-box"><canvas id="planChart"></canvas></div>
-          </div>
-
-          <div class="section">
-            <div class="section-title"><h4>Hourly schedule</h4></div>
-            <div class="table-wrap" style="max-height:440px">
-              <table class="data-table schedule-table">
-                <thead><tr><th>Hour</th><th>Grid</th><th>Solar</th><th>Action</th><th>Battery kWh</th><th>Battery after</th></tr></thead>
-                <tbody id="scheduleBody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <details><summary>Raw API JSON</summary><pre id="rawJson"></pre></details>
-        </div>
-      </div>
-    </section>
-  </main>
-  <footer class="container footer">GridWise • FastAPI • Gemini 3.5 Flash-Lite • deterministic validation • linear optimization</footer>
-  <script src="/assets/app.js"></script>
-</body>
-</html>
+<script>
+var state={data:null,busy:false};
+function el(id){return document.getElementById(id)}
+function num(x,d){return Number(x||0).toLocaleString(undefined,{maximumFractionDigits:d||0})}
+function percent(x,d){return (Number(x||0)*100).toFixed(d==null?1:d)+"%"}
+function safe(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function cls(s){return ["OPEN","AVAILABLE","ARRIVED","RUNNING","healthy","ok","OPTIMAL"].indexOf(s)>=0?"good":["CONSTRAINED","PENDING","IN_TRANSIT","SCHEDULED","PAUSED","DELAYED","recovering"].indexOf(s)>=0?"warn":"bad"}
+function note(m,bad){var t=el("toast");t.textContent=m;t.className="toast show"+(bad?" err":"");clearTimeout(window._note);window._note=setTimeout(function(){t.className="toast"},3000)}
+async function api(path,opt){var o=opt||{};o.headers=Object.assign({"Content-Type":"application/json"},o.headers||{});var r=await fetch(path,o),txt=await r.text(),b={};try{b=txt?JSON.parse(txt):{}}catch(e){b={raw:txt}}if(!r.ok)throw new Error((b.detail&&b.detail.message)||b.message||("HTTP "+r.status));return b}
+function fuel(x){var inv=x.inventory||{},cap=x.capacity||{};return ["DIESEL","PETROL","OCTANE"].map(function(f){var v=Number(inv[f]||0),m=Math.max(Number(cap[f]||1),1),w=Math.min(100,v/m*100);return '<div class="fuel"><span>'+f+' · '+num(v)+' / '+num(m)+' L</span><div class="bar"><i style="width:'+w+'%"></i></div></div>'}).join("")}
+function recHtml(r,i){return '<div class="item rec"><div><strong>'+safe(r.destination_station_id)+' · '+safe(r.fuel_type)+' · '+num(r.quantity)+' L</strong><small>'+safe(r.reason)+'</small><div class="meta">Risk '+percent(r.stockout_probability_before,0)+' → '+percent(r.stockout_probability_after,0)+' · reduction '+num(r.risk_reduction_pct,1)+' pts · ETA '+num(r.transit_ticks)+' ticks · confidence '+percent(r.forecast_confidence,0)+'</div></div><button class="btn" onclick="applyRec('+i+')">Apply</button></div>'}
+function render(){
+var d=state.data;if(!d)return;var s=d.snapshot||{},m=s.metrics||{},r=d.risks||{},intel=d.intelligence||{},o=d.observability||{},recs=intel.recommendations||[];
+el("service").textContent=percent(m.service_level,2);el("critical").textContent=num(r.critical_shortage_risks);el("crises").textContent=num(r.active_events);el("failures").textContent=num(m.allocation_failures);el("tick").textContent="Tick "+(s.instance&&s.instance.tick!=null?s.instance.tick:"--");el("simstate").textContent=s.instance?s.instance.status:"Unknown";
+var online=s.health&&s.health.status==="ok";el("dot").className="dot "+(online?"ok":"bad");el("conn").textContent=online?"Official simulator online":"Simulator degraded";el("degraded").style.display=(s.meta&&(s.meta.degraded||s.meta.stale))?"inline-block":"none";
+var ri=(r.critical_items||[]).map(function(x){return '<div class="item risk"><div><strong>'+safe(x.station_id)+' · '+safe(x.fuel_type)+'</strong><small>Coverage '+num(x.coverage_ticks,1)+' ticks · '+num(x.liters_per_tick,1)+' L/tick · confidence '+percent(x.confidence,0)+'</small></div><em>'+percent(x.stockout_probability,0)+'</em></div>'}).join("");el("risks").innerHTML=ri||'<div class="item"><strong>No critical shortage risk</strong><small>Current forecast is below the critical threshold.</small></div>';
+el("recs").innerHTML=recs.slice(0,5).map(recHtml).join("")||'<div class="item"><strong>No allocation required</strong><small>Current state does not justify a constrained shipment.</small></div>';el("queue").innerHTML=recs.map(recHtml).join("")||'<div class="item"><strong>No pending recommendation</strong><small>Advance the simulation or inject a crisis.</small></div>';el("applyAll").disabled=!recs.length;
+el("depots").innerHTML=(s.depots||[]).map(function(x){return '<div class="entity"><h3>'+safe(x.name)+'</h3><div class="sub">'+safe(x.id)+' · dispatch '+num(x.dispatch_capacity_per_tick)+' L/tick · <span class="'+cls(x.status)+'">'+safe(x.status)+'</span></div>'+fuel(x)+'</div>'}).join("");
+el("stations").innerHTML=(s.stations||[]).map(function(x){return '<div class="entity"><h3>'+safe(x.name)+'</h3><div class="sub">'+safe(x.demand_profile)+' · demand ×'+num(x.demand_multiplier,2)+' · <span class="'+cls(x.status)+'">'+safe(x.status)+'</span></div>'+fuel(x)+'</div>'}).join("");
+el("routes").innerHTML=(s.routes||[]).map(function(x){return "<tr><td>"+safe(x.id)+"</td><td>"+safe(x.source_depot_id)+"</td><td>"+safe(x.destination_station_id)+"</td><td>"+num(x.transit_ticks)+" ticks</td><td>"+num(x.max_shipment)+" L</td><td class='"+cls(x.status)+"'>"+safe(x.status)+"</td></tr>"}).join("");
+el("supplies").innerHTML=(s.supply_arrivals||[]).slice(0,20).map(function(x){return "<tr><td>"+safe(x.id)+"</td><td>"+safe(x.depot_id)+"</td><td>"+safe(x.fuel_type)+"</td><td>"+num(x.quantity)+" L</td><td>"+num(x.planned_tick)+"</td><td class='"+cls(x.status)+"'>"+safe(x.status)+"</td></tr>"}).join("");
+el("allocs").innerHTML=(s.allocations||[]).slice(0,40).map(function(x){return "<tr><td>"+num(x.id)+"</td><td>"+safe(x.fuel_type)+"</td><td>"+safe(x.route_id)+"</td><td>"+num(x.quantity)+" L</td><td>"+num(x.created_tick)+"</td><td>"+(x.expected_arrival_tick==null?"--":x.expected_arrival_tick)+"</td><td class='"+cls(x.status)+"'>"+safe(x.status)+"</td></tr>"}).join("");
+el("events").innerHTML=(s.events||[]).slice(0,30).map(function(x){return '<div class="item"><strong>'+safe(x.type)+' · <span class="'+cls(x.status)+'">'+safe(x.status)+'</span></strong><small>Tick '+num(x.start_tick)+' → '+num(x.end_tick)+' · '+safe(JSON.stringify(x.parameters||{}))+'</small></div>'}).join("")||'<div class="item"><strong>No events yet</strong><small>Use the Crisis Lab to inject one.</small></div>';
+el("p95").textContent=num(o.latency_ms&&o.latency_ms.p95,1)+" ms";el("error").textContent=percent(o.error_rate,2);el("degradedReads").textContent=num(o.degraded_reads);el("sse").textContent=num(o.sse_reconnects);refreshObs()
+}
+async function refresh(loud){if(state.busy)return;state.busy=true;try{state.data=await api("/api/dashboard");render();if(loud)note("Dashboard refreshed.")}catch(e){el("dot").className="dot bad";el("conn").textContent="Backend unavailable";if(loud)note(e.message,true)}finally{state.busy=false}}
+window.applyRec=async function(i){var r=state.data&&state.data.intelligence&&state.data.intelligence.recommendations[i];if(!r)return;try{await api("/api/allocations/apply",{method:"POST",body:JSON.stringify({source_depot_id:r.source_depot_id,destination_station_id:r.destination_station_id,route_id:r.route_id,fuel_type:r.fuel_type,quantity:r.quantity})});note("Allocation accepted: "+num(r.quantity)+" L "+r.fuel_type);await refresh(false)}catch(e){note(e.message,true)}};
+async function applyAll(){var rs=(state.data&&state.data.intelligence&&state.data.intelligence.recommendations)||[];if(!rs.length)return;var body={recommendations:rs.map(function(r){return {source_depot_id:r.source_depot_id,destination_station_id:r.destination_station_id,route_id:r.route_id,fuel_type:r.fuel_type,quantity:r.quantity}})};try{var x=await api("/api/allocations/apply-bulk",{method:"POST",body:JSON.stringify(body)});note("Applied "+x.accepted+" recommendations; "+x.failed+" failed.");await refresh(false)}catch(e){note(e.message,true)}}
+async function admin(a){if(a==="reset"&&!confirm("Reset the official simulator scenario?"))return;try{await api("/api/admin/"+a,{method:"POST",body:"{}"});note("Simulation "+a+" complete.");await refresh(false)}catch(e){note(e.message,true)}}
+async function crisis(t){var tick=Number(state.data&&state.data.snapshot&&state.data.snapshot.instance&&state.data.snapshot.instance.tick||0),p={demand_spike:{type:"demand_spike",start_tick:tick+1,duration_ticks:12,parameters:{region_ids:["region-dhaka"],multiplier:1.8}},route_disruption:{type:"route_disruption",start_tick:tick+1,duration_ticks:8,parameters:{route_ids:["route-gazipur-mirpur"]}},station_outage:{type:"station_outage",start_tick:tick+1,duration_ticks:8,parameters:{station_ids:["station-mirpur"]}},supply_shortfall:{type:"supply_shortfall",start_tick:tick+1,duration_ticks:1,parameters:{factor:.5,fuel_types:["DIESEL"]}}};try{await api("/api/admin/events",{method:"POST",body:JSON.stringify(p[t])});note(t.replaceAll("_"," ")+" injected.");await refresh(false)}catch(e){note(e.message,true)}}
+async function fault(t){var p={latency:{type:"latency",duration_seconds:45,parameters:{delay_ms:500}},error_rate:{type:"error_rate",duration_seconds:45,parameters:{rate:.25}},stale_data:{type:"stale_data",duration_seconds:45,parameters:{}},stream_disconnect:{type:"stream_disconnect",duration_seconds:45,parameters:{}}};try{await api("/api/admin/faults",{method:"POST",body:JSON.stringify(p[t])});note(t.replaceAll("_"," ")+" fault injected.");setTimeout(function(){refresh(false)},700)}catch(e){note(e.message,true)}}
+async function refreshObs(){try{var d=await api("/api/observability"),c=d.health.components||{};el("health").innerHTML=Object.keys(c).map(function(k){var v=c[k];return '<div class="item"><strong>'+safe(k.replaceAll("_"," "))+' · <span class="'+cls(v.status)+'">'+safe(v.status)+'</span></strong><small>'+safe(v.model||v.solver||"")+'</small></div>'}).join("");el("audit").innerHTML=(d.events||[]).slice(0,30).map(function(x){return '<div class="item"><strong>'+safe(x.kind)+'</strong><small>'+safe(x.message)+' · '+safe(x.at)+'</small></div>'}).join("")||'<div class="item">No application events yet.</div>';el("metrics").textContent=await fetch("/metrics").then(function(r){return r.text()})}catch(e){}}
+el("nav").onclick=function(e){var b=e.target.closest("[data-v]");if(!b)return;document.querySelectorAll("#nav button").forEach(function(x){x.classList.toggle("active",x===b)});document.querySelectorAll(".view").forEach(function(x){x.classList.remove("active")});el(b.dataset.v).classList.add("active");var titles={overview:"Fuel Operations Command Center",network:"Fuel Network State",decisions:"Decision Intelligence",crisis:"Crisis & Failure Lab",observability:"Observability & Service Health"};el("title").textContent=titles[b.dataset.v]};
+document.querySelectorAll("[data-admin]").forEach(function(b){b.onclick=function(){admin(b.dataset.admin)}});document.querySelectorAll("[data-crisis]").forEach(function(b){b.onclick=function(){crisis(b.dataset.crisis)}});document.querySelectorAll("[data-fault]").forEach(function(b){b.onclick=function(){fault(b.dataset.fault)}});el("refresh").onclick=function(){refresh(true)};el("applyAll").onclick=applyAll;el("recompute").onclick=function(){refresh(true)};el("clearFaults").onclick=async function(){try{await api("/api/admin/faults/clear",{method:"POST",body:"{}"});note("Faults cleared.");await refresh(false)}catch(e){note(e.message,true)}};
+refresh(false);setInterval(function(){refresh(false)},2500);
+</script>
+</body></html>
