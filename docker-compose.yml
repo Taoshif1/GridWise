@@ -1,12 +1,23 @@
 services:
-  gridwise:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: gridwise-bup:latest
-    container_name: gridwise-bup
-    env_file:
-      - .env
+  simulator:
+    image: asifmahmoud414/bup-fuel-supply-simulator:1.0.0
+    environment:
+      SIMULATION_SPEED: ${SIMULATION_SPEED:-8}
+      TICK_MINUTES: ${TICK_MINUTES:-15}
+      SIMULATOR_START_MODE: ${SIMULATOR_START_MODE:-paused}
     ports:
-      - "1337:1337"
+      - "8000:8000"
+    restart: unless-stopped
+
+  gridwise:
+    build: .
+    environment:
+      SIMULATOR_URL: http://simulator:8000
+      APP_ENV: local
+      SIMULATOR_TIMEOUT_SECONDS: 3
+      SIMULATOR_MAX_RETRIES: 3
+    ports:
+      - "8080:8080"
+    depends_on:
+      - simulator
     restart: unless-stopped
